@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Adaptive AI Crop Recommendation</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background-color: #f5fdfa;
+    color: #2f4f2f;
+  }
+  header {
+    background: linear-gradient(rgba(34, 109, 34, 0.8), rgba(54, 164, 54, 0.85)), url('https://images.unsplash.com/photo-1462918149255-fae65a749e14?auto=format&fit=crop&w=1500&q=80');
+    background-size: cover;
+    color: #e7f3e7;
+    text-align: center;
+    padding: 4rem 1rem;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 3rem;
+  }
+  header p {
+    font-size: 1.2rem;
+    margin-top: 12px;
+  }
+  main {
+    max-width: 960px;
+    margin: 2rem auto;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2rem 3rem;
+    box-shadow: 0 2px 12px rgb(34 83 23 / 0.15);
+  }
+  form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(240px,1fr));
+    gap: 20px;
+  }
+  label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+  }
+  input, select {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1.5px solid #94c794;
+    outline-offset: 2px;
+    transition: border-color 0.3s ease;
+  }
+  input:focus, select:focus {
+    border-color: #3c6b31;
+  }
+  button {
+    grid-column: 1 / -1;
+    background-color: #3c6b31;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    padding: 12px;
+    cursor: pointer;
+    font-weight: 700;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #2b4a22;
+  }
+  .recommendations {
+    margin-top: 2rem;
+  }
+  .crop-card {
+    border: 1.5px solid #a9d0a7;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin: 12px 0;
+    background: #e9f1e9;
+    box-shadow: 0 1px 5px rgb(34 83 23 / 0.1);
+  }
+  .crop-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #3e803e;
+    margin: 0;
+  }
+  .suitability-score {
+    margin: 8px 0;
+  }
+  .score-bar-bg {
+    width: 100%;
+    background: #cde8cd;
+    border-radius: 10px;
+    height: 18px;
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 18px;
+    background-color: #4caf50;
+    text-align: right;
+    padding-right: 8px;
+    color: #fff;
+    font-weight: 600;
+    line-height: 18px;
+  }
+  .crop-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #425c42;
+  }
+  .details-item {
+    flex: 1 1 150px;
+  }
+  .section-title {
+    font-weight: 700;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    color: #3a6826;
+  }
+  ul {
+    margin: 6px 0 12px 18px;
+    color: #476b3b;
+  }
+
+  @media(max-width:640px) {
+    main {
+      padding: 20px;
+      margin: 1rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Adaptive AI Crop Recommendations</h1>
+  <p>Get precise crop suggestions for your farm, based on your unique soil, climate, and seasonal data.</p>
+</header>
+
+<main>
+  <form id="farmForm">
+    <div>
+      <label for="location">Location (Region)</label>
+      <input type="text" id="location" placeholder="e.g. Punjab, India" required />
+    </div>
+    <div>
+      <label for="farmSize">Farm Size (acres)</label>
+      <input type="number" id="farmSize" min="0.5" step="0.1" required />
+    </div>
+    <div>
+      <label for="season">Season</label>
+      <select id="season" required>
+        <option value="" selected disabled>Select Season</option>
+        <option>Kharif</option>
+        <option>Rabi</option>
+        <option>Zaid</option>
+      </select>
+    </div>
+    <div>
+      <label for="soilType">Soil Type</label>
+      <select id="soilType" required>
+        <option value="" selected disabled>Select Soil Type</option>
+        <option>Loamy</option>
+        <option>Alluvial</option>
+        <option>Black</option>
+        <option>Red</option>
+        <option>Laterite</option>
+        <option>Saline</option>
+        <option>Peaty</option>
+        <option>Sandy</option>
+      </select>
+    </div>
+    <div>
+      <label for="avgTemp">Average Temperature (°C)</label>
+      <input type="number" id="avgTemp" min="5" max="45" required />
+    </div>
+    <div>
+      <label for="humidity">Humidity (%)</label>
+      <input type="number" id="humidity" min="10" max="90" required />
+    </div>
+    <button type="submit">Get Recommendations</button>
+  </form>
+
+  <section class="recommendations" id="results"></section>
+</main>
+
+<script>
+  const cropDatabase = [
+    {
+      name: 'Wheat',
+      soils: ['Loamy', 'Alluvial', 'Black'],
+      seasons: ['Rabi'],
+      tempRange: [10, 25],
+      humidityRange: [40, 70],
+      suitabilityCriteria: ['cool weather', 'moderate humidity'],
+      expectedYield: '3-5 tons/hectare',
+      growthPeriod: '110-130 days',
+      marketPrice: '₹18-22/kg',
+      benefits: [
+        'Winter crop with good yields',
+        'Excellent market stability',
+        'Lower water requirements',
+        'Allows mechanized farming',
+      ],
+      considerations: [
+        'Requires cool weather for growth',
+        'Sensitive to heat during grain filling',
+        'May need irrigation in dry areas',
+      ],
+    },
+    {
+      name: 'Cotton',
+      soils: ['Black', 'Laterite', 'Red'],
+      seasons: ['Kharif', 'Rabi'],
+      tempRange: [20, 35],
+      humidityRange: [50, 80],
+      suitabilityCriteria: ['warm climate', 'moderate to high humidity'],
+      expectedYield: '2-3 tons/hectare',
+      growthPeriod: '180-200 days',
+      marketPrice: '₹50-60/kg',
+      benefits: [
+        'Good market demand',
+        'Tolerant to dry spells',
+        'Suitable for medium rainfall',
+      ],
+      considerations: [
+        'Sensitive to waterlogging',
+        'Long growth period',
+      ],
+    },
+    {
+      name: 'Rice',
+      soils: ['Alluvial', 'Loamy', 'Clay'],
+      seasons: ['Kharif'],
+      tempRange: [25, 35],
+      humidityRange: [70, 90],
+      suitabilityCriteria: ['high moisture', 'warm and humid climate'],
+      expectedYield: '4-6 tons/hectare',
+      growthPeriod: '100-140 days',
+      marketPrice: '₹20-25/kg',
+      benefits: [
+        'High yield potential',
+        'Tolerant to waterlogging',
+        'Good market demand',
+      ],
+      considerations: [
+        'Requires continuous water',
+        'Prone to pest infestations',
+      ],
+    },
+    {
+      name: 'Maize',
+      soils: ['Loamy', 'Sandy', 'Alluvial'],
+      seasons: ['Kharif', 'Rabi'],
+      tempRange: [20, 30],
+      humidityRange: [50, 70],
+      suitabilityCriteria: ['adaptable', 'good fodder crop'],
+      expectedYield: '2-4 tons/hectare',
+      growthPeriod: '80-110 days',
+      marketPrice: '₹15-18/kg',
+      benefits: [
+        'Short growth cycle',
+        'Adaptable to variable rainfall',
+      ],
+      considerations: [
+        'Sensitive to drought',
+        'Needs fertile soil',
+      ],
+    },
+    {
+      name: 'Chickpea',
+      soils: ['Red', 'Loamy', 'Black'],
+      seasons: ['Rabi'],
+      tempRange: [15, 28],
+      humidityRange: [35, 55],
+      suitabilityCriteria: ['moderate temperature', 'low humidity'],
+      expectedYield: '1.5-2.5 tons/hectare',
+      growthPeriod: '90-110 days',
+      marketPrice: '₹25-30/kg',
+      benefits: [
+        'Nitrogen fixer improving soil',
+        'Drought tolerant',
+      ],
+      considerations: [
+        'Sensitive to frost',
+        'Needs well-drained soil',
+      ],
+    },
+  ];
+
+  function evaluateSuitability(crop, input) {
+    const tempOk = input.avgTemp >= crop.tempRange[0] && input.avgTemp <= crop.tempRange[1];
+    const humidityOk = input.humidity >= crop.humidityRange[0] && input.humidity <= crop.humidityRange[1];
+    const soilOk = crop.soils.includes(input.soilType);
+    const seasonOk = crop.seasons.includes(input.season);
+    return tempOk && humidityOk && soilOk && seasonOk;
+  }
+
+  document.getElementById('farmForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = {
+      location: document.getElementById('location').value.trim(),
+      farmSize: parseFloat(document.getElementById('farmSize').value),
+      season: document.getElementById('season').value,
+      soilType: document.getElementById('soilType').value,
+      avgTemp: parseFloat(document.getElementById('avgTemp').value),
+      humidity: parseFloat(document.getElementById('humidity').value),
+    };
+
+    // Filter crops based on suitability
+    const suitableCrops = cropDatabase.filter(crop => evaluateSuitability(crop, input));
+
+    const resultsSection = document.getElementById('results');
+    if(suitableCrops.length === 0) {
+      resultsSection.innerHTML = `<p>No crops found matching your conditions. Please try different inputs.</p>`;
+      return;
+    }
+
+    // Sort by expected yield (assuming higher yield better)
+    suitableCrops.sort((a, b) => {
+      const aYield = parseFloat(a.expectedYield);
+      const bYield = parseFloat(b.expectedYield);
+      return bYield - aYield;
+    });
+
+    // Build crop cards html
+    const cardsHtml = suitableCrops.map(crop => `
+      <div class="crop-card">
+        <h3 class="crop-title">${crop.name}</h3>
+        <div class="suitability-score">
+          <strong>Suitability Criteria:</strong> ${crop.suitabilityCriteria.join(', ')}
+        </div>
+        <div class="crop-details">
+          <div class="details-item"><strong>Expected Yield:</strong> ${crop.expectedYield}</div>
+          <div class="details-item"><strong>Growth Period:</strong> ${crop.growthPeriod}</div>
+          <div class="details-item"><strong>Market Price:</strong> ${crop.marketPrice}</div>
+        </div>
+        <div>
+          <p><strong>Benefits:</strong></p>
+          <ul>${crop.benefits.map(b => `<li>${b}</li>`).join('')}</ul>
+        </div>
+        <div>
+          <p><strong>Considerations:</strong></p>
+          <ul>${crop.considerations.map(c => `<li>${c}</li>`).join('')}</ul>
+        </div>
+      </div>
+    `).join('');
+
+    resultsSection.innerHTML = cardsHtml;
+  });
+</script>
+
+</body>
+</html>
